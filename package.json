@@ -1,8 +1,8 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "cloudflare-image-uploader",
-  "title": "Cloudflare Image Uploader",
-  "description": "Upload Image to CloudFlare Image Service",
+  "name": "imagekit-uploader",
+  "title": "imagekit Uploader",
+  "description": "Upload Image to imagekit",
   "icon": "command-icon.png",
   "author": "jinzhubaofu",
   "categories": [
@@ -13,42 +13,51 @@
     {
       "name": "index",
       "title": "Upload",
-      "description": "Upload your image to Cloudflare Image Service",
+      "description": "Upload images to ImageKit",
       "mode": "view"
     }
   ],
   "preferences": [
     {
-      "name": "token",
-      "description": "cloudflare token",
+      "name": "publicKey",
+      "description": "Public Key",
       "type": "textfield",
-      "title": "cloudflare token",
+      "title": "Public Key",
       "required": true
     },
     {
-      "name": "accountId",
-      "type": "textfield",
-      "title": "cloudflare account id",
-      "description": "cloudflare account id",
+      "name": "privateKey",
+      "type": "password",
+      "title": "Private Key",
+      "description": "Private Key",
       "required": true
     },
     {
-      "name": "accountHash",
+      "name": "urlEndpoint",
       "type": "textfield",
-      "title": "cloudflare account hash",
-      "description": "cloudflare account hash",
+      "title": "Url Endpoint",
+      "description": "Url Endpoint",
       "required": true
     }
   ],
   "dependencies": {
-    "@raycast/api": "^1.64.5"
+    "@prisma/client": "^5.7.1",
+    "@raycast/api": "^1.64.5",
+    "@raycast/utils": "^1.10.1",
+    "image-type": "^5.2.0",
+    "imagekit": "^4.1.4",
+    "read-chunk": "^4.0.3",
+    "run-applescript": "^7.0.0",
+    "sqlite": "^5.1.1"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.6",
     "@types/node": "20.8.10",
     "@types/react": "18.2.27",
+    "dotenv-cli": "^7.3.0",
     "eslint": "^8.51.0",
     "prettier": "^3.1.1",
+    "prisma": "^5.7.1",
     "typescript": "^5.2.2"
   },
   "scripts": {
