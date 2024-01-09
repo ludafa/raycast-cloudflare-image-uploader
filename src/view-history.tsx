@@ -14,6 +14,8 @@ import { ImageDetailMetadata } from './common/components/image-detail-metadata';
 import { useImageKit } from './common/hooks/useImageKit';
 import { getDetailImage } from './common/utils/imagekit';
 
+const DEFAULT_IMAGE_ALT = 'an image from clipboard';
+
 export default function ViewHistoryCommand() {
   const [images, setImages] = useState<ImageMeta[] | null>(null);
   useEffect(() => {
@@ -46,7 +48,10 @@ export default function ViewHistoryCommand() {
     <List isShowingDetail={!!images?.length}>
       {images ? (
         images.map((image) => {
-          const imageFileName = path.basename(image.source);
+          const imageFileName =
+            image.from === 'finder'
+              ? path.basename(image.source)
+              : DEFAULT_IMAGE_ALT;
           return (
             <List.Item
               key={image.hash}
@@ -72,6 +77,11 @@ export default function ViewHistoryCommand() {
                     }}
                     icon={Icon.DeleteDocument}
                     onAction={() => deleteImage(image)}
+                  />
+                  <Action.CopyToClipboard
+                    icon={Icon.CopyClipboard}
+                    title="Copy Markdown Content to Clipboard"
+                    content={`![${imageFileName}](${image.url})`}
                   />
                 </ActionPanel>
               }

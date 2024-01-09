@@ -3,6 +3,5 @@ export const getDetailImage = (origin: string, height: number) => {
   const [appId, ...rest] = url.pathname.split('/').slice(1);
   url.pathname = '/' + [appId, `tr:h-${height},f-auto`, ...rest].join('/');
   const optimizedUrl = url.toString();
-  console.log(optimizedUrl);
   return optimizedUrl;
 };

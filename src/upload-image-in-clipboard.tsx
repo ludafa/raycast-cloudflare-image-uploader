@@ -151,6 +151,11 @@ export default function Command() {
               content={state.image.url}
             />
             <Action.OpenInBrowser url={state.image.url} />
+            <Action.CopyToClipboard
+              icon={Icon.CopyClipboard}
+              title="Copy Markdown Content to Clipboard"
+              content={`![image from clipboard](${state.image.url})`}
+            />
           </ActionPanel>
         ) : null
       }
