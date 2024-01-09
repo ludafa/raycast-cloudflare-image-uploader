@@ -12,25 +12,25 @@
   "commands": [
     {
       "name": "upload-selected-image-in-finder",
-      "title": "Upload selected image in finder",
+      "title": "Upload Selected Image in Finder",
       "description": "Upload the selected image in Finder to ImageKit",
       "mode": "view"
     },
     {
       "name": "upload-image-in-clipboard",
-      "title": "Upload image in the clipboard",
+      "title": "Upload Image in the Clipboard",
       "description": "Upload the image in clipboard",
       "mode": "view"
     },
     {
       "name": "view-history",
-      "title": "List recently uploads",
-      "description": "List recently uploads",
+      "title": "List Recently Uploaded Images",
+      "description": "List recently uploaded images",
       "mode": "view"
     },
     {
       "name": "clear-history",
-      "title": "Clear upload history",
+      "title": "Clear Upload History",
       "description": "Clear upload history",
       "mode": "no-view"
     }
