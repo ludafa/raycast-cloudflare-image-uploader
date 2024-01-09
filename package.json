@@ -11,10 +11,28 @@
   "license": "MIT",
   "commands": [
     {
-      "name": "index",
-      "title": "Upload",
-      "description": "Upload images to ImageKit",
+      "name": "upload-selected-image-in-finder",
+      "title": "Upload selected image in finder",
+      "description": "Upload the selected image in Finder to ImageKit",
       "mode": "view"
+    },
+    {
+      "name": "upload-image-in-clipboard",
+      "title": "Upload image in the clipboard",
+      "description": "Upload the image in clipboard",
+      "mode": "view"
+    },
+    {
+      "name": "view-history",
+      "title": "List recently uploads",
+      "description": "List recently uploads",
+      "mode": "view"
+    },
+    {
+      "name": "clear-history",
+      "title": "Clear upload history",
+      "description": "Clear upload history",
+      "mode": "no-view"
     }
   ],
   "preferences": [
@@ -43,6 +61,7 @@
   "dependencies": {
     "@raycast/api": "^1.64.5",
     "@raycast/utils": "^1.10.1",
+    "date-fns": "^3.1.0",
     "image-meta": "^0.2.0",
     "image-type": "^5.2.0",
     "imagekit": "^4.1.4",

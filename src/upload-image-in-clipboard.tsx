@@ -5,52 +5,26 @@ import {
   getPreferenceValues,
   LocalStorage,
   Detail,
+  Clipboard,
 } from '@raycast/api';
 import { useEffect, useRef, useState } from 'react';
-import { getFinderSelectedImages } from './utils/get-finder-selected-images';
 import ImageKit from 'imagekit';
 import fs from 'fs/promises';
-import path from 'path';
 import crypto from 'crypto';
 import { imageMeta } from 'image-meta';
-
-interface Preferences {
-  publicKey: string;
-  privateKey: string;
-  urlEndpoint: string;
-}
-
-type ImageMeta = {
-  source: string;
-  format: string;
-  url: string;
-  thumbnailUrl: string;
-  size: number;
-  height?: number;
-  width?: number;
-};
+import { ImageMeta, Preferences } from './common/types';
+import { ImageDetailMetadata } from './common/components/image-detail-metadata';
+import { getDetailImage } from './common/utils/imagekit';
 
 type StateType =
   | {
-      status: 'initial' | 'no-selected-image' | 'canceled';
+      status: 'initial' | 'no-input' | 'image-format-invalid' | 'canceled';
     }
   | {
       status: 'succeed';
       cache: boolean;
       image: ImageMeta;
     };
-
-const toUnit = (size: number) => {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  let unitIndex = 0;
-  let unit = units[unitIndex];
-  while (size >= 1024) {
-    size /= 1024;
-    unitIndex++;
-    unit = units[unitIndex];
-  }
-  return `${size.toFixed(2)} ${unit}`;
-};
 
 export default function Command() {
   const [state, setState] = useState<StateType>({
@@ -70,18 +44,31 @@ export default function Command() {
 
   useEffect(() => {
     const load = async () => {
-      const selectedImages = await getFinderSelectedImages();
-      if (!selectedImages?.length) {
+      let { file: image } = await Clipboard.read();
+      if (!image) {
         setState({
-          status: 'no-selected-image',
+          status: 'no-input',
         });
         return;
       }
 
-      const image = selectedImages[0];
+      image = decodeURIComponent(image);
+
+      if (image.startsWith('file://')) {
+        image = image.slice(7);
+      }
+
       const data = await fs.readFile(image);
       const meta = await imageMeta(data);
-      const type = meta.type ?? path.extname(image).slice(1);
+
+      if (!meta?.type) {
+        setState({
+          status: 'image-format-invalid',
+        });
+        return;
+      }
+
+      const type = meta.type;
       const hash = crypto.createHash('sha256').update(data).digest('base64url');
 
       const record = await LocalStorage.getItem<string>(hash);
@@ -102,6 +89,7 @@ export default function Command() {
       });
 
       const {
+        fileId,
         url,
         size = data.length,
         height = meta.height,
@@ -109,7 +97,10 @@ export default function Command() {
         thumbnailUrl,
       } = res;
 
-      const newRecord = {
+      const newRecord: ImageMeta = {
+        fileId,
+        hash,
+        from: 'clipboard',
         source: image,
         format: type,
         url,
@@ -134,12 +125,10 @@ export default function Command() {
 
   const MARKDOWN_TEXT =
     state.status === 'succeed'
-      ? `
-![Image Title](${state.image.url})
-`
+      ? `![Image Title](${getDetailImage(state.image.url, 360)})`
       : state.status === 'initial'
         ? '**uploading...**'
-        : 'No Image Selected';
+        : 'No images in the clipboard';
 
   return (
     <Detail
@@ -150,42 +139,7 @@ export default function Command() {
       isLoading={state.status === 'initial'}
       metadata={
         state.status === 'succeed' ? (
-          <Detail.Metadata>
-            <Detail.Metadata.Link
-              title="URL"
-              target={state.image.url}
-              text={state.image.url}
-            />
-            <Detail.Metadata.Separator />
-            {state.image.format && (
-              <Detail.Metadata.Label
-                title="Format"
-                text={
-                  state.image.format.startsWith('.')
-                    ? state.image.format.slice(1)
-                    : state.image.format
-                }
-              />
-            )}
-            {state.image.size && (
-              <Detail.Metadata.Label
-                title="Size"
-                text={toUnit(state.image.size)}
-              />
-            )}
-            {state.image.width && (
-              <Detail.Metadata.Label
-                title="Width"
-                text={String(state.image.width)}
-              />
-            )}
-            {state.image.height && (
-              <Detail.Metadata.Label
-                title="Height"
-                text={String(state.image.height)}
-              />
-            )}
-          </Detail.Metadata>
+          <ImageDetailMetadata image={state.image} />
         ) : null
       }
       actions={
