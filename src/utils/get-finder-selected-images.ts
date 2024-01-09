@@ -34,6 +34,5 @@ tell application "Finder"
   end if
 end tell`,
   );
-  console.log('osa', result.length);
   return result.split(/,\s+/g).filter((item) => !!item);
 };

@@ -23,15 +23,14 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
   },
-  "editor.rulers": [
-    80
-  ],
+  "editor.rulers": [80],
   "cSpell.words": [
     "applescript",
     "datepicker",
     "Frontmost",
     "ICNS",
     "imagekit",
+    "ludafa",
     "raycast",
     "tokeneditor"
   ]

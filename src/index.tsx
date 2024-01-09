@@ -1,10 +1,10 @@
 import {
   Action,
   ActionPanel,
-  List,
   Icon,
   getPreferenceValues,
   LocalStorage,
+  Detail,
 } from '@raycast/api';
 import { useEffect, useRef, useState } from 'react';
 import { getFinderSelectedImages } from './utils/get-finder-selected-images';
@@ -12,7 +12,7 @@ import ImageKit from 'imagekit';
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
-import imageType from 'image-type';
+import { imageMeta } from 'image-meta';
 
 interface Preferences {
   publicKey: string;
@@ -24,19 +24,39 @@ type ImageMeta = {
   source: string;
   format: string;
   url: string;
-  size: number;
-  height: number;
-  width: number;
   thumbnailUrl: string;
+  size: number;
+  height?: number;
+  width?: number;
 };
 
-const getType = async (filepath: string, data: Buffer) => {
-  const type = await imageType(data);
-  return type ? '.' + type.ext : path.extname(filepath);
+type StateType =
+  | {
+      status: 'initial' | 'no-selected-image' | 'canceled';
+    }
+  | {
+      status: 'succeed';
+      cache: boolean;
+      image: ImageMeta;
+    };
+
+const toUnit = (size: number) => {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  let unitIndex = 0;
+  let unit = units[unitIndex];
+  while (size >= 1024) {
+    size /= 1024;
+    unitIndex++;
+    unit = units[unitIndex];
+  }
+  return `${size.toFixed(2)} ${unit}`;
 };
 
 export default function Command() {
-  const [images, setImages] = useState<ImageMeta[]>();
+  const [state, setState] = useState<StateType>({
+    status: 'initial',
+  });
+
   const { publicKey, privateKey, urlEndpoint } =
     getPreferenceValues<Preferences>();
 
@@ -50,80 +70,136 @@ export default function Command() {
 
   useEffect(() => {
     const load = async () => {
-      await LocalStorage.clear();
       const selectedImages = await getFinderSelectedImages();
-      const uploadedImages = await Promise.all(
-        selectedImages.map(async (image) => {
-          const data = await fs.readFile(image);
-          const type = await getType(image, data);
-          const hash = crypto
-            .createHash('sha256')
-            .update(data)
-            .digest('base64url');
+      if (!selectedImages?.length) {
+        setState({
+          status: 'no-selected-image',
+        });
+        return;
+      }
 
-          const record = await LocalStorage.getItem<string>(hash);
+      const image = selectedImages[0];
+      const data = await fs.readFile(image);
+      const meta = await imageMeta(data);
+      const type = meta.type ?? path.extname(image).slice(1);
+      const hash = crypto.createHash('sha256').update(data).digest('base64url');
 
-          if (record) {
-            return JSON.parse(record);
-          }
+      const record = await LocalStorage.getItem<string>(hash);
 
-          const res = await imagekit.upload({
-            file: data,
-            fileName: `${hash}${type}`,
-            useUniqueFileName: false,
-          });
+      if (record) {
+        setState({
+          status: 'succeed',
+          cache: true,
+          image: JSON.parse(record),
+        });
+        return;
+      }
 
-          const { url, size, height, width, thumbnailUrl } = res;
+      const res = await imagekit.upload({
+        file: data,
+        fileName: `${hash}.${type}`,
+        useUniqueFileName: false,
+      });
 
-          console.log(res);
+      const {
+        url,
+        size = data.length,
+        height = meta.height,
+        width = meta.height,
+        thumbnailUrl,
+      } = res;
 
-          const newRecord = {
-            source: image,
-            format: type,
-            url,
-            size,
-            height,
-            width,
-            thumbnailUrl,
-          };
+      const newRecord = {
+        source: image,
+        format: type,
+        url,
+        size,
+        height,
+        width,
+        thumbnailUrl,
+        createdAt: Date.now(),
+      };
 
-          await LocalStorage.setItem(hash, JSON.stringify(newRecord));
+      await LocalStorage.setItem(hash, JSON.stringify(newRecord));
 
-          return newRecord;
-        }),
-      );
-      console.log('uploadedImages', uploadedImages);
-      setImages(uploadedImages);
+      setState({
+        status: 'succeed',
+        cache: false,
+        image: newRecord,
+      });
     };
+
     load();
   }, []);
 
-  console.log('images', images);
+  const MARKDOWN_TEXT =
+    state.status === 'succeed'
+      ? `
+![Image Title](${state.image.url})
+`
+      : state.status === 'initial'
+        ? '**uploading...**'
+        : 'No Image Selected';
 
   return (
-    <List isLoading={images === undefined}>
-      {images?.length ? (
-        images.map(({ url }) => (
-          <List.Item
-            title={url}
-            accessories={[{ icon: Icon.CheckCircle }]}
-            key={url}
-            subtitle="local"
-            actions={
-              <ActionPanel>
-                <Action.CopyToClipboard
-                  icon={Icon.CopyClipboard}
-                  content={url}
-                />
-              </ActionPanel>
-            }
-          />
-        ))
-      ) : (
-        <List.EmptyView
-          title={images === undefined ? 'Uploading...' : 'No images selected'}
-        />
-      )}
-    </List>
+    <Detail
+      markdown={MARKDOWN_TEXT}
+      navigationTitle={
+        state.status === 'initial' ? 'Uploading' : 'Uploaded successfully'
+      }
+      isLoading={state.status === 'initial'}
+      metadata={
+        state.status === 'succeed' ? (
+          <Detail.Metadata>
+            <Detail.Metadata.Link
+              title="URL"
+              target={state.image.url}
+              text={state.image.url}
+            />
+            <Detail.Metadata.Separator />
+            {state.image.format && (
+              <Detail.Metadata.Label
+                title="Format"
+                text={
+                  state.image.format.startsWith('.')
+                    ? state.image.format.slice(1)
+                    : state.image.format
+                }
+              />
+            )}
+            {state.image.size && (
+              <Detail.Metadata.Label
+                title="Size"
+                text={toUnit(state.image.size)}
+              />
+            )}
+            {state.image.width && (
+              <Detail.Metadata.Label
+                title="Width"
+                text={String(state.image.width)}
+              />
+            )}
+            {state.image.height && (
+              <Detail.Metadata.Label
+                title="Height"
+                text={String(state.image.height)}
+              />
+            )}
+          </Detail.Metadata>
+        ) : null
+      }
+      actions={
+        state.status === 'succeed' ? (
+          <ActionPanel>
+            <Action.CopyToClipboard
+              icon={Icon.CopyClipboard}
+              title="Copy Image CDN URL to Clipboard"
+              content={state.image.url}
+            />
+            <Action.OpenInBrowser url={state.image.url} />
+          </ActionPanel>
+        ) : null
+      }
+    />
   );
 }

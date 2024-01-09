@@ -1,10 +1,10 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "imagekit-uploader",
-  "title": "imagekit Uploader",
+  "title": "ImageKit Uploader",
   "description": "Upload Image to imagekit",
-  "icon": "command-icon.png",
-  "author": "jinzhubaofu",
+  "icon": "extension_icon.png",
+  "author": "ludafa",
   "categories": [
     "Media"
   ],
@@ -41,14 +41,12 @@
     }
   ],
   "dependencies": {
-    "@prisma/client": "^5.7.1",
     "@raycast/api": "^1.64.5",
     "@raycast/utils": "^1.10.1",
+    "image-meta": "^0.2.0",
     "image-type": "^5.2.0",
     "imagekit": "^4.1.4",
-    "read-chunk": "^4.0.3",
-    "run-applescript": "^7.0.0",
-    "sqlite": "^5.1.1"
+    "run-applescript": "^7.0.0"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.6",
@@ -57,7 +55,6 @@
     "dotenv-cli": "^7.3.0",
     "eslint": "^8.51.0",
     "prettier": "^3.1.1",
-    "prisma": "^5.7.1",
     "typescript": "^5.2.2"
   },
   "scripts": {
